@@ -5,15 +5,15 @@ from subprocess import Popen
 from time import sleep
 import datetime
 
-db = sqlite3.connection('SongBlocks.db')
+db = sqlite3.connection('MusicBlocks.db')
 db.row_factory = sqlite.Row
 
 def play_song(block_num):
     query = db.execute('SELECT * FROM song_table WHERE block_number=?',block_num)
     song = query.fetchone()['file_name']
-    if os.path.isfile('/media/SongBlocks/%' % song):
+    if os.path.isfile('/media/MusicBlocks/%' % song):
         player = Popen(['mpg123', '-R', '-F', 'Player'], stdin=PIPE, stdout=PIPE)
-        player.stdin.write('L media/SongBlocks/%\n' % song)
+        player.stdin.write('L /media/MusicBlocks/%\n' % song)
         player.stdin.flush()
         return player
     return None

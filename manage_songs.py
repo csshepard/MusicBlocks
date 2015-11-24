@@ -1,5 +1,5 @@
 """
-Manage Song Blocks
+Manage Music Blocks
 
 Usage:
   manage_songs.py add --block=<block_number> --title=<title> --file=<file_name> [--uid=<tag_id>]
@@ -23,7 +23,7 @@ import time
 from docopt import docopt
 
 
-db = sqlite3.connect('SongBlocks.db')
+db = sqlite3.connect('MusicBlocks.db')
 db.row_factory = sqlite3.Row
 
 def replace_song(title, file_name, block_num):
@@ -32,10 +32,10 @@ def replace_song(title, file_name, block_num):
     if cursor.fetchone() is not None and os.path.isfile(file_name):
         cursor.execute('SELECT file_name FROM song_table WHERE block_number=?',block_num)
         old_file = cursor.fetchone()['file_name']
-        shutil.copyfile(file_name, '/home/chris/media/SongBlocks/%s' % file_name)
+        shutil.copyfile(file_name, '/home/chris/media/MusicBlocks/%s' % file_name)
         cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, file_name, block_num))
         db.commit()
-        os.remove('/home/chris/media/SongBlocks/%s' % old_file)
+        os.remove('/home/chris/media/MusicBlocks/%s' % old_file)
         print('Block Updated')
         return True
     else:
@@ -58,7 +58,7 @@ def add_block(title, file_name, block_num, tag_id=None):
     if cursor.fetchone() is None and os.path.isfile(file_name):
         cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
         cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, file_name, block_num))
-        shutil.copyfile(file_name, '/home/chris/media/SongBlocks/%s' % file_name)
+        shutil.copyfile(file_name, '/home/chris/media/MusicBlocks/%s' % file_name)
         db.commit()
         print('Block Added')
         return True
@@ -72,4 +72,4 @@ if __name__ == '__main__':
     if arguments['add']:
         add_block(arguments['--title'], arguments['--file'], arguments['--block'], arguments['--uid'])
     elif arguments['replace']:
-        replace_song(arguments['--title'], arguments['--file'], arguments['--block'])
+            replace_song(arguments['--title'], arguments['--file'], arguments['--block'])

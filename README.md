@@ -4,7 +4,7 @@ A Raspberry Pi Based Music Box for my daughter.
 Music Blocks was inspired by a project created by Shawn Kahandaliyanage called [Song Blocks](http://shawnrk.github.io/songblocks/).  As he puts it:
 >I (Shawn Kahandaliyanage) built Song Blocks so my toddler could play music on the living room Sonos without apparently interacting with technology
 
-The device includes wooden blocks with embendded NFC tags that when placed against a surface, play different music depending on which block is used.
+The device includes wooden blocks with embedded NFC tags that when placed against a surface, play different songs depending on which block is used.
 
 I liked the idea, but didn't have a Sonos.  With the help of my Father-in-law, I'm going to build a stand alone device that has the same functionality with installed speakers.
 
@@ -19,4 +19,4 @@ I liked the idea, but didn't have a Sonos.  With the help of my Father-in-law, I
 - Wood for enclosure (will update after design is finalized)
 
 ## Design:
-We've decided to build the player into a toy box that will be in my daughters room.  The electronics will be inside a false front for protection.  The speakers will also be built into this false front towards the edges of the box.
+We've decided to build the player into a toy box that will be in my daughter's room.  The electronics will be inside a false front for protection.  The speakers will also be built into this false front towards the edges of the box.

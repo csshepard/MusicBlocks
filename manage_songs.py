@@ -16,7 +16,7 @@ Options:
 
 from __future__ import print_function
 import sqlite3
-#import nxppy
+import nxppy
 import os
 import shutil
 import time
@@ -30,12 +30,13 @@ def replace_song(title, file_name, block_num):
     cursor = db.cursor()
     cursor.execute('SELECT * FROM block_table WHERE block_number=?',block_num)
     if cursor.fetchone() is not None and os.path.isfile(file_name):
+        song = os.path.split(file_name)[1]
         cursor.execute('SELECT file_name FROM song_table WHERE block_number=?',block_num)
         old_file = cursor.fetchone()['file_name']
-        shutil.copyfile(file_name, '/home/chris/media/MusicBlocks/%s' % file_name)
-        cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, file_name, block_num))
+        shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+        cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, song, block_num))
         db.commit()
-        os.remove('/home/chris/media/MusicBlocks/%s' % old_file)
+        os.remove('/home/pi/Music/MusicBlocks/%s' % old_file)
         print('Block Updated')
         return True
     else:
@@ -44,11 +45,15 @@ def replace_song(title, file_name, block_num):
 
 
 def add_block(title, file_name, block_num, tag_id=None):
+    print(tag_id)
     if tag_id is None:
         nfc = nxppy.Mifare()
-        while True:
+        print('Place Tag on reader\n')
+        for _ in range(10):
             try:
+                print('Reading...')
                 tag_id = nfc.select()
+                print('Tag UID: %s' % tag_id)
                 break
             except nxppy.SelectError:
                 pass
@@ -56,9 +61,10 @@ def add_block(title, file_name, block_num, tag_id=None):
     cursor = db.cursor()
     cursor.execute('SELECT * FROM block_table WHERE tag_id=? OR block_number=?', (tag_id, block_num))
     if cursor.fetchone() is None and os.path.isfile(file_name):
+        song = os.path.split(file_name)[1]
         cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
-        cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, file_name, block_num))
-        shutil.copyfile(file_name, '/home/chris/media/MusicBlocks/%s' % file_name)
+        cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, song, block_num))
+        shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
         db.commit()
         print('Block Added')
         return True

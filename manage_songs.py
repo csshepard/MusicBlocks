@@ -4,6 +4,7 @@ Manage Music Blocks
 Usage:
   manage_songs.py add --block=<block_number> --title=<title> --file=<file_name> [--uid=<tag_id>]
   manage_songs.py replace --block=<block_number> --title=<title> --file=<file_name>
+  manage_songs.py remove --block=<block_number>
   manage_songs.py status
   manage_songs.py -h | --help
 
@@ -46,7 +47,6 @@ def replace_song(title, file_name, block_num):
 
 
 def add_block(title, file_name, block_num, tag_id=None):
-    print(tag_id)
     if tag_id is None:
         nfc = nxppy.Mifare()
         print('Place Tag on reader\n')
@@ -74,6 +74,24 @@ def add_block(title, file_name, block_num, tag_id=None):
         return False
 
 
+def remove_block(block_number):
+    query = db.execute('SELECT file_name FROM song_table WHERE block_number=?', block_number)
+    song = query.fetchone()
+    if song is not None:
+        try:
+            os.remove('/home/pi/Music/MusicBlocks/%s' % song['file_name'])
+        except OSError:
+            print('Song File Not Found')
+        db.execute('DELETE FROM song_table WHERE block_number=?', block_number)
+        db.execute('DELETE FROM block_table WHERE block_number=?', block_number)
+        db.commit()
+        print('Block Deleted')
+        return True
+    else:
+        print('Block not found')
+        return False
+
+
 def status():
     query = db.execute('SELECT song_table.song_name AS song_name, block_table.block_number AS block_number, block_table.tag_id AS tag_id FROM song_table INNER JOIN block_table ON block_table.block_number=song_table.block_number')
     row = '{:^14}{:^25}{:^16}'
@@ -90,4 +108,5 @@ if __name__ == '__main__':
             replace_song(arguments['--title'], arguments['--file'], arguments['--block'])
     elif arguments['status']:
         status()
-
+    elif arguments['remove']:
+        remove_block(arguments['--block'])

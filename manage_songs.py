@@ -4,6 +4,7 @@ Manage Music Blocks
 Usage:
   manage_songs.py add --block=<block_number> --title=<title> --file=<file_name> [--uid=<tag_id>]
   manage_songs.py replace --block=<block_number> --title=<title> --file=<file_name>
+  manage_songs.py status
   manage_songs.py -h | --help
 
 Options:
@@ -73,9 +74,20 @@ def add_block(title, file_name, block_num, tag_id=None):
         return False
 
 
+def status():
+    query = db.execute('SELECT song_table.song_name AS song_name, block_table.block_number AS block_number, block_table.tag_id AS tag_id FROM song_table INNER JOIN block_table ON block_table.block_number=song_table.block_number')
+    row = '{:^14}{:^25}{:^16}'
+    print(row.format('Block Number', 'Song', 'Tag ID')) 
+    for block in query.fetchall():
+        print(row.format(block['block_number'], block['song_name'], block['tag_id']))
+
+
 if __name__ == '__main__':
     arguments = docopt(__doc__)
     if arguments['add']:
         add_block(arguments['--title'], arguments['--file'], arguments['--block'], arguments['--uid'])
     elif arguments['replace']:
             replace_song(arguments['--title'], arguments['--file'], arguments['--block'])
+    elif arguments['status']:
+        status()
+

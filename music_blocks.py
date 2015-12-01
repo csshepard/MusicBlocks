@@ -6,13 +6,17 @@ from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
 
+
 if not os.path.isfile('MusicBlocks.db'):
-    sys.exit("Database not found. Run 'python manage_songs.py' to create database and insert songs")
-db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
+    sys.exit("Database not found.\n"
+             "Run 'python manage_songs.py' to create db and insert songs")
+db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
 
+
 def play_song(block_num):
-    query = db.execute('SELECT * FROM song_table WHERE block_number=?', (block_num,))
+    query = db.execute('SELECT * FROM song_table WHERE block_number=?',
+                       (block_num,))
     song = query.fetchone()['file_name']
     if os.path.isfile('/home/pi/Music/MusicBlocks/%s' % song):
         player = Popen(['mpg123', '-R', 'Player'], stdin=PIPE, stdout=PIPE)
@@ -34,11 +38,20 @@ def main_loop():
     while True:
         try:
             uid = nfc.select()
-            query = db.execute('SELECT block_table.block_number AS block_number, song_table.song_name AS song_name FROM block_table INNER JOIN song_table ON song_table.block_number = block_table.block_number WHERE block_table.tag_id=?', (uid,))
+            query = db.execute("""\
+                SELECT block_table.block_number AS block_number,
+                song_table.song_name AS song_name FROM block_table
+                INNER JOIN song_table
+                ON song_table.block_number = block_table.block_number
+                WHERE block_table.tag_id=?
+                """, (uid,))
             block = query.fetchone()
             if block and player is None:
                 player = play_song(block['block_number'])
-                db.execute('INSERT INTO play_history_table (time_played, song_name) VALUES (?, ?)', (datetime.now(), block['song_name']))
+                db.execute("""\
+                    INSERT INTO play_history_table (time_played, song_name)
+                    VALUES (?, ?)
+                    """, (datetime.now(), block['song_name']))
                 db.commit()
                 print('Playing %s' % block['song_name'])
         except nxppy.SelectError:

@@ -23,10 +23,10 @@ import os
 import shutil
 import time
 from docopt import docopt
-
+import sys
 
 if not os.path.isfile('MusicBlocks.db'):
-    db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
+    db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
     db.executescript("""
                      CREATE TABLE block_table(
                          block_number INTEGER PRIMARY KEY,
@@ -40,25 +40,34 @@ if not os.path.isfile('MusicBlocks.db'):
                          time_played TIMESTAMP,
                          song_name TEXT);
                      """)
-else:    
-    db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
+    db.commit()
+else:
+    db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
+
 
 def replace_song(title, file_name, block_num):
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM block_table WHERE block_number=?',block_num)
-    if cursor.fetchone() is not None and os.path.isfile(file_name):
+    cursor.execute('SELECT * FROM block_table WHERE block_number=?', block_num)
+    if cursor.fetchone() is not None:
         song = os.path.split(file_name)[1]
-        cursor.execute('SELECT file_name FROM song_table WHERE block_number=?',block_num)
+        cursor.execute('SELECT file_name FROM song_table WHERE block_number=?', block_num)
         old_file = cursor.fetchone()['file_name']
-        shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+        try:
+            shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+        except IOError as e:
+            print(e)
+            return False
         cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, song, block_num))
         db.commit()
-        os.remove('/home/pi/Music/MusicBlocks/%s' % old_file)
+        try:
+            os.remove('/home/pi/Music/MusicBlocks/%s' % old_file)
+        except OSError:
+            pass
         print('Block Updated')
         return True
     else:
-        print('File or Block not found')
+        print('Block not found')
         return False
 
 
@@ -75,54 +84,75 @@ def add_block(title, file_name, block_num, tag_id=None):
             except nxppy.SelectError:
                 pass
             time.sleep(1)
+    if tag_id is None:
+        print('No Tag Detected')
+        return False
     cursor = db.cursor()
     cursor.execute('SELECT * FROM block_table WHERE tag_id=? OR block_number=?', (tag_id, block_num))
-    if cursor.fetchone() is None and os.path.isfile(file_name):
+    block = cursor.fetchone()
+    if block is None:
         song = os.path.split(file_name)[1]
         cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
         cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, song, block_num))
-        shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+        try:
+            shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+        except IOError as e:
+            db.rollback()
+            print(e)
+            return False
         db.commit()
         print('Block Added')
         return True
     else:
-        print('Block or Tag already in use or File not Found')
+        if block['block_number'] == block_num:
+            print('Block already in use')
+        else:
+            print('Tag already in use')
         return False
 
 
-def remove_block(block_number):
-    query = db.execute('SELECT file_name FROM song_table WHERE block_number=?', block_number)
+def remove_block(block_num):
+    query = db.execute('SELECT file_name FROM song_table WHERE block_number=?',
+                       block_num)
     song = query.fetchone()
     if song is not None:
         try:
             os.remove('/home/pi/Music/MusicBlocks/%s' % song['file_name'])
         except OSError:
             print('Song File Not Found')
-        db.execute('DELETE FROM song_table WHERE block_number=?', block_number)
-        db.execute('DELETE FROM block_table WHERE block_number=?', block_number)
+        db.execute('DELETE FROM song_table WHERE block_number=?', block_num)
+        db.execute('DELETE FROM block_table WHERE block_number=?', block_num)
         db.commit()
-        print('Block Deleted')
+        print('Block %i Deleted' % block_num)
         return True
     else:
-        print('Block not found')
+        print('Block %i not found' % block_num)
         return False
 
 
 def status():
-    query = db.execute('SELECT song_table.song_name AS song_name, block_table.block_number AS block_number, block_table.tag_id AS tag_id FROM song_table INNER JOIN block_table ON block_table.block_number=song_table.block_number')
+    query = db.execute("""\
+        SELECT song_table.song_name AS song_name,
+        block_table.block_number AS block_number,
+        block_table.tag_id AS tag_id FROM song_table
+        INNER JOIN block_table
+        ON block_table.block_number=song_table.block_number
+        """)
     row = '{:^14}{:^25}{:^16}'
-    print(row.format('Block Number', 'Song', 'Tag ID')) 
+    print(row.format('Block Number', 'Song', 'Tag ID'))
     for block in query.fetchall():
-        print(row.format(block['block_number'], block['song_name'], block['tag_id']))
+        print(row.format(block['block_number'], block['song_name'],
+                         block['tag_id']))
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    if arguments['add']:
-        add_block(arguments['--title'], arguments['--file'], arguments['--block'], arguments['--uid'])
-    elif arguments['replace']:
-            replace_song(arguments['--title'], arguments['--file'], arguments['--block'])
-    elif arguments['status']:
+    args = docopt(__doc__)
+    if args['add']:
+        add_block(args['--title'], args['--file'],
+                  args['--block'], args['--uid'])
+    elif args['replace']:
+            replace_song(args['--title'], args['--file'], args['--block'])
+    elif args['status']:
         status()
-    elif arguments['remove']:
-        remove_block(arguments['--block'])
+    elif args['remove']:
+        remove_block(args['--block'])

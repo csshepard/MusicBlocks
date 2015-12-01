@@ -25,7 +25,23 @@ import time
 from docopt import docopt
 
 
-db = sqlite3.connect('MusicBlocks.db')
+if not os.path.isfile('MusicBlocks.db'):
+    db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
+    db.executescript("""
+                     CREATE TABLE block_table(
+                         block_number INTEGER PRIMARY KEY,
+                         tag_id TEXT);
+                     CREATE TABLE song_table(
+                         song_name TEXT,
+                         file_name TEXT,
+                         block_number INTEGER,
+                         FOREIGN KEY(block_number) REFERENCES block_table(block_number));
+                     CREATE TABLE play_history_table(
+                         time_played TIMESTAMP,
+                         song_name TEXT);
+                     """)
+else:    
+    db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
 
 def replace_song(title, file_name, block_num):

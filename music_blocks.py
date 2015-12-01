@@ -1,11 +1,14 @@
 import nxppy
 import sqlite3
 import os
+import sys
 from subprocess import Popen, PIPE
 from time import sleep
-import datetime
+from datetime import datetime
 
-db = sqlite3.Connection('MusicBlocks.db')
+if not os.path.isfile('MusicBlocks.db'):
+    sys.exit("Database not found. Run 'python manage_songs.py' to create database and insert songs")
+db = sqlite3.connect('MusicBlocks.db',detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
 
 def play_song(block_num):
@@ -35,8 +38,8 @@ def main_loop():
             block = query.fetchone()
             if block and player is None:
                 player = play_song(block['block_number'])
-                #db.execute('INSERT INTO play_history_table (time_played, song_name) VALUES (?, ?)', (datetime.datetime.now(), block['song_name']))
-                #db.commit()
+                db.execute('INSERT INTO play_history_table (time_played, song_name) VALUES (?, ?)', (datetime.now(), block['song_name']))
+                db.commit()
                 print('Playing %s' % block['song_name'])
         except nxppy.SelectError:
             if player is not None:

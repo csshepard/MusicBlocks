@@ -123,10 +123,10 @@ def remove_block(block_num):
         db.execute('DELETE FROM song_table WHERE block_number=?', block_num)
         db.execute('DELETE FROM block_table WHERE block_number=?', block_num)
         db.commit()
-        print('Block %i Deleted' % block_num)
+        print('Block %s Deleted' % block_num)
         return True
     else:
-        print('Block %i not found' % block_num)
+        print('Block %s not found' % block_num)
         return False
 
 

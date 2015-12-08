@@ -10,7 +10,8 @@ from datetime import datetime
 if not os.path.isfile('MusicBlocks.db'):
     sys.exit("Database not found.\n"
              "Run 'python manage_songs.py' to create db and insert songs")
-db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES,
+                     isolation_level=None)
 db.row_factory = sqlite3.Row
 
 

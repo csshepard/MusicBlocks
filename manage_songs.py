@@ -9,11 +9,11 @@ Usage:
   manage_songs.py -h | --help
 
 Options:
-  -h --help               Show this screen.
-  --block=<block_number>  Integer printed on block.
-  --title=<title>         Song Title.
-  --file=<file_name>      File name of song.
-  --uid=<tag_id>          (optional) uid of NFC tag
+  -h --help                                  Show this screen.
+  -b <block_number>, --block=<block_number>  Integer printed on block.
+  -t <title>, --title=<title>                Song Title.
+  -f <file_name>, --file=<file_name>         File name of song.
+  --uid=<tag_id>                             (optional) uid of NFC tag
 """
 
 from __future__ import print_function

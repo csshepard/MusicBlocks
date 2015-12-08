@@ -24,11 +24,12 @@ def play_song(block_num):
         player.stdin.write('L /home/pi/Music/MusicBlocks/%s\n' % song)
         player.stdin.flush()
         return player
+    print('%s not found' % song)
     return None
 
 
 def stop_song(player):
-    player.stdin.write('STOP\nQUIT\n')
+    player.stdin.write('S\nQ\n')
     player.stdin.flush()
     player.terminate()
 
@@ -39,7 +40,10 @@ def main_loop():
     while True:
         try:
             uid = nfc.select()
-            if player is None:
+            if player is None or player[1] != uid:
+                if player is not None:
+                    stop_song(player[0])
+                    player = None
                 query = db.execute("""\
                     SELECT block_table.block_number AS block_number,
                     song_table.song_name AS song_name FROM block_table
@@ -49,7 +53,7 @@ def main_loop():
                     """, (uid,))
                 block = query.fetchone()
                 if block:
-                    player = play_song(block['block_number'])
+                    player = (play_song(block['block_number']), uid)
                     db.execute("""\
                         INSERT INTO play_history_table (time_played, song_name)
                         VALUES (?, ?)
@@ -57,7 +61,7 @@ def main_loop():
                     print('Playing %s' % block['song_name'])
         except nxppy.SelectError:
             if player is not None:
-                stop_song(player)
+                stop_song(player[0])
                 player = None
                 print('Stopped Song')
         sleep(1)

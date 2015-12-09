@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Manage Music Blocks
 
@@ -25,8 +27,8 @@ import time
 from docopt import docopt
 import sys
 
-if not os.path.isfile('MusicBlocks.db'):
-    db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
+if not os.path.isfile('/home/pi/MusicBlocks/MusicBlocks.db'):
+    db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
     db.executescript("""
                      CREATE TABLE block_table(
                          block_number INTEGER PRIMARY KEY,
@@ -42,7 +44,7 @@ if not os.path.isfile('MusicBlocks.db'):
                      """)
     db.commit()
 else:
-    db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
+    db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
 
 
@@ -137,6 +139,7 @@ def status():
         block_table.tag_id AS tag_id FROM song_table
         INNER JOIN block_table
         ON block_table.block_number=song_table.block_number
+        ORDER BY block_number
         """)
     row = '{:^14}{:^25}{:^16}'
     print(row.format('Block Number', 'Song', 'Tag ID'))

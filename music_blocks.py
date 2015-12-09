@@ -7,10 +7,10 @@ from time import sleep
 from datetime import datetime
 
 
-if not os.path.isfile('MusicBlocks.db'):
+if not os.path.isfile('/home/pi/MusicBlocks/MusicBlocks.db'):
     sys.exit("Database not found.\n"
              "Run 'python manage_songs.py' to create db and insert songs")
-db = sqlite3.connect('MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES,
+db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES,
                      isolation_level=None)
 db.row_factory = sqlite3.Row
 
@@ -29,9 +29,7 @@ def play_song(block_num):
 
 
 def stop_song(player):
-    player.stdin.write('S\nQ\n')
-    player.stdin.flush()
-    player.terminate()
+    player.communicate('S\nQ\n')
 
 
 def main_loop():

@@ -6,11 +6,12 @@ from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
 
+PATH = os.path.realpath(__file__)
 
-if not os.path.isfile('/home/pi/MusicBlocks/MusicBlocks.db'):
+if not os.path.isfile(PATH+'/MusicBlocks.db'):
     sys.exit("Database not found.\n"
              "Run 'python manage_songs.py' to create db and insert songs")
-db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES,
+db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES,
                      isolation_level=None)
 db.row_factory = sqlite3.Row
 
@@ -19,9 +20,13 @@ def play_song(block_num):
     query = db.execute('SELECT * FROM song_table WHERE block_number=?',
                        (block_num,))
     song = query.fetchone()['file_name']
-    if os.path.isfile('/home/pi/Music/MusicBlocks/%s' % song):
-        player = Popen(['mpg123', '-R', 'Player'], stdin=PIPE, stdout=PIPE)
-        player.stdin.write('L /home/pi/Music/MusicBlocks/%s\n' % song)
+    if os.path.isfile(PATH+'/Music/%s' % song):
+        try:
+		    player = Popen(['mpg123', '-R', 'Player'], stdin=PIPE, stdout=PIPE)
+	    except OSError:
+		    db.close()
+		    sys.exit("Error Running mpg123.\n Run 'apt-get install mpg123'")
+        player.stdin.write('L '+PATH+'/Music/%s\n' % song)
         player.stdin.flush()
         return player
     print('%s not found' % song)

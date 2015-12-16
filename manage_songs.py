@@ -27,8 +27,10 @@ import time
 from docopt import docopt
 import sys
 
-if not os.path.isfile('/home/pi/MusicBlocks/MusicBlocks.db'):
-    db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
+PATH = os.path.realpath(__file__)
+
+if not os.path.isfile(PATH+'/MusicBlocks.db'):
+    db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
     db.executescript("""
                      CREATE TABLE block_table(
                          block_number INTEGER PRIMARY KEY,
@@ -44,7 +46,7 @@ if not os.path.isfile('/home/pi/MusicBlocks/MusicBlocks.db'):
                      """)
     db.commit()
 else:
-    db = sqlite3.connect('/home/pi/MusicBlocks/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
+    db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
 db.row_factory = sqlite3.Row
 
 
@@ -56,20 +58,23 @@ def replace_song(title, file_name, block_num):
         cursor.execute('SELECT file_name FROM song_table WHERE block_number=?', block_num)
         old_file = cursor.fetchone()['file_name']
         try:
-            shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+            shutil.copyfile(file_name, PATH+'/Music/%s' % song)
         except IOError as e:
             print(e)
+            cursor.close()
             return False
         cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, song, block_num))
         db.commit()
         try:
-            os.remove('/home/pi/Music/MusicBlocks/%s' % old_file)
+            os.remove(PATH+'/Music/%s' % old_file)
         except OSError:
             pass
         print('Block Updated')
+        cursor.close()
         return True
     else:
         print('Block not found')
+        cursor.close()
         return False
 
 
@@ -97,19 +102,22 @@ def add_block(title, file_name, block_num, tag_id=None):
         cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
         cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, song, block_num))
         try:
-            shutil.copyfile(file_name, '/home/pi/Music/MusicBlocks/%s' % song)
+            shutil.copyfile(file_name, PATH+'/Music/%s' % song)
         except IOError as e:
             db.rollback()
             print(e)
+            cursor.close()
             return False
         db.commit()
         print('Block Added')
+        cursor.close()
         return True
     else:
         if block['block_number'] == block_num:
             print('Block already in use')
         else:
             print('Tag already in use')
+        cursor.close()
         return False
 
 
@@ -119,7 +127,7 @@ def remove_block(block_num):
     song = query.fetchone()
     if song is not None:
         try:
-            os.remove('/home/pi/Music/MusicBlocks/%s' % song['file_name'])
+            os.remove(PATH+'/Music/%s' % song['file_name'])
         except OSError:
             print('Song File Not Found')
         db.execute('DELETE FROM song_table WHERE block_number=?', block_num)
@@ -159,3 +167,4 @@ if __name__ == '__main__':
         status()
     elif args['remove']:
         remove_block(args['--block'])
+    db.close()

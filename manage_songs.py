@@ -27,7 +27,7 @@ import time
 from docopt import docopt
 import sys
 
-PATH = os.path.realpath(__file__)
+PATH = os.path.split(os.path.realpath(__file__))[0]
 
 if not os.path.isfile(PATH+'/MusicBlocks.db'):
     db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)

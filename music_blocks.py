@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
 
-PATH = os.path.realpath(__file__)
+PATH = os.path.split(os.path.realpath(__file__))[0]
 
 if not os.path.isfile(PATH+'/MusicBlocks.db'):
     sys.exit("Database not found.\n"
@@ -22,10 +22,10 @@ def play_song(block_num):
     song = query.fetchone()['file_name']
     if os.path.isfile(PATH+'/Music/%s' % song):
         try:
-		    player = Popen(['mpg123', '-R', 'Player'], stdin=PIPE, stdout=PIPE)
-	    except OSError:
-		    db.close()
-		    sys.exit("Error Running mpg123.\n Run 'apt-get install mpg123'")
+            player = Popen(['mpg123', '-R', 'Player'], stdin=PIPE, stdout=PIPE)
+        except OSError:
+            db.close()
+            sys.exit("Error Running mpg123.\n Run 'apt-get install mpg123'")
         player.stdin.write('L '+PATH+'/Music/%s\n' % song)
         player.stdin.flush()
         return player

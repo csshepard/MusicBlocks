@@ -4,8 +4,8 @@
 Manage Music Blocks
 
 Usage:
-  manage_songs.py add -b <block_number> -t <title> -f <file_name> [--uid=<tag_id>]
-  manage_songs.py replace -b <block_number> -t <title> -f <file_name>
+  manage_songs.py add -b <block_number> [-t <title>] -f <file_name> [--uid=<tag_id>]
+  manage_songs.py replace -b <block_number> [-t <title>] -f <file_name>
   manage_songs.py remove -b <block_number>
   manage_songs.py status
   manage_songs.py -h | --help
@@ -13,7 +13,7 @@ Usage:
 Options:
   -h --help                                  Show this screen.
   -b <block_number>, --block=<block_number>  Integer printed on block.
-  -t <title>, --title=<title>                Song Title.
+  -t <title>, --title=<title>                (optional) Song Title.
   -f <file_name>, --file=<file_name>         File name of song.
   --uid=<tag_id>                             (optional) uid of NFC tag
 """
@@ -50,11 +50,19 @@ else:
 db.row_factory = sqlite3.Row
 
 
+def file2title(file_name):
+    title = os.path.splitext(file_name)[0]
+    title = title.replace('.', ' ').replace('_', ' ').title()
+    return title
+
+
 def replace_song(title, file_name, block_num):
     cursor = db.cursor()
     cursor.execute('SELECT * FROM block_table WHERE block_number=?', block_num)
     if cursor.fetchone() is not None:
-        song = os.path.split(file_name)[1]
+        song = os.path.basename(file_name)
+        if title is None:
+            title = file2title(song)
         cursor.execute('SELECT file_name FROM song_table WHERE block_number=?', block_num)
         old_file = cursor.fetchone()['file_name']
         try:
@@ -98,7 +106,9 @@ def add_block(title, file_name, block_num, tag_id=None):
     cursor.execute('SELECT * FROM block_table WHERE tag_id=? OR block_number=?', (tag_id, block_num))
     block = cursor.fetchone()
     if block is None:
-        song = os.path.split(file_name)[1]
+        song = os.path.basename(file_name)
+        if title is None:
+            title = file2title(song)
         cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
         cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, song, block_num))
         try:

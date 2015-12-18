@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
 
-PATH = os.path.split(os.path.realpath(__file__))[0]
+PATH = os.path.dirname(os.path.realpath(__file__))
 
 if not os.path.isfile(PATH+'/MusicBlocks.db'):
     sys.exit("Database not found.\n"

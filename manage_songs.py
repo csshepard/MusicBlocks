@@ -4,9 +4,9 @@
 Manage Music Blocks
 
 Usage:
-  manage_songs.py add --block=<block_number> --title=<title> --file=<file_name> [--uid=<tag_id>]
-  manage_songs.py replace --block=<block_number> --title=<title> --file=<file_name>
-  manage_songs.py remove --block=<block_number>
+  manage_songs.py add -b <block_number> -t <title> -f <file_name> [--uid=<tag_id>]
+  manage_songs.py replace -b <block_number> -t <title> -f <file_name>
+  manage_songs.py remove -b <block_number>
   manage_songs.py status
   manage_songs.py -h | --help
 
@@ -27,7 +27,7 @@ import time
 from docopt import docopt
 import sys
 
-PATH = os.path.split(os.path.realpath(__file__))[0]
+PATH = os.path.dirname(os.path.realpath(__file__))
 
 if not os.path.isfile(PATH+'/MusicBlocks.db'):
     db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)

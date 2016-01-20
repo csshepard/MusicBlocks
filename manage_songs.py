@@ -161,7 +161,7 @@ def status():
         ON block_table.block_number=song_table.block_number
         ORDER BY block_number
         """)
-    row = '{:^14}{:^25}{:^16}'
+    row = '{:^14}{:^32}{:^16}'
     print(row.format('Block Number', 'Song', 'Tag ID'))
     for block in query.fetchall():
         print(row.format(block['block_number'], block['song_name'],

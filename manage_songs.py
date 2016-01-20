@@ -8,6 +8,7 @@ Usage:
   manage_songs.py replace -b <block_number> [-t <title>] -f <file_name>
   manage_songs.py remove -b <block_number>
   manage_songs.py status
+  manage_songs.py history
   manage_songs.py -h | --help
 
 Options:
@@ -26,6 +27,7 @@ import shutil
 import time
 from docopt import docopt
 import sys
+from datetime import datetime
 
 PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -166,6 +168,15 @@ def status():
                          block['tag_id']))
 
 
+
+def history():
+    query = db.execute("SELECT * FROM play_history_table")
+    row = '{:^21}{:^32}'
+    print(row.format('Date/Time', 'Song'))
+    for entry in query.fetchall():
+        print(row.format(entry[0].strftime('%m/%d/%Y %H:%M:%S'), entry[1]))
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     if args['add']:
@@ -177,4 +188,6 @@ if __name__ == '__main__':
         status()
     elif args['remove']:
         remove_block(args['--block'])
+    elif args['history']:
+        history()
     db.close()

@@ -28,7 +28,7 @@ from docopt import docopt
 import sys
 from datetime import datetime
 from sqlalchemy import create_engine, or_
-from sqlalchem.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from models import *
 
@@ -37,21 +37,6 @@ PATH = os.path.dirname(os.path.realpath(__file__))
 
 engine = create_engine('sqlite:///'+PATH+'/MusicBlocks.db')
 if not os.path.isfile(PATH+'/MusicBlocks.db'):
-    # db = sqlite3.connect(PATH+'/MusicBlocks.db', detect_types=sqlite3.PARSE_DECLTYPES)
-    # db.executescript("""
-    #                  CREATE TABLE block_table(
-    #                      block_number INTEGER PRIMARY KEY,
-    #                      tag_id TEXT);
-    #                  CREATE TABLE song_table(
-    #                      song_name TEXT,
-    #                      file_name TEXT,
-    #                      block_number INTEGER,
-    #                      FOREIGN KEY(block_number) REFERENCES block_table(block_number));
-    #                  CREATE TABLE play_history_table(
-    #                      time_played TIMESTAMP,
-    #                      song_name TEXT);
-    #                  """)
-    # db.commit()
     Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 db = Session()
@@ -64,8 +49,6 @@ def file2title(file_name):
 
 
 def replace_song(title, file_name, block_num):
-    # cursor = db.cursor()
-    # cursor.execute('SELECT * FROM block_table WHERE block_number=?', block_num)
     block = db.query(Block).filter_by(number=block_num).one_or_none()
     if block is not None:
         filename = os.path.basename(file_name)
@@ -77,8 +60,6 @@ def replace_song(title, file_name, block_num):
             return True
         if title is None:
             title = file2title(song)
-        # cursor.execute('SELECT file_name FROM song_table WHERE block_number=?', block_num)
-        # old_file = cursor.fetchone()['file_name']
         try:
             shutil.copyfile(file_name, PATH+'/Music/%s' % filename)
         except IOError as e:
@@ -87,7 +68,6 @@ def replace_song(title, file_name, block_num):
         song = Song(title=title, file=filename)
         db.add(song)
         block.song = song
-        # cursor.execute('UPDATE song_table SET song_name=?, file_name=? WHERE block_number=?', (title, song, block_num))
         db.commit()
         print('Block Updated')
         return True
@@ -112,10 +92,7 @@ def add_block(title, file_name, block_num, tag_id=None):
     if tag_id is None:
         print('No Tag Detected')
         return False
-    # cursor = db.cursor()
-    # cursor.execute('SELECT * FROM block_table WHERE tag_id=? OR block_number=?', (tag_id, block_num))
-    # block = cursor.fetchone()
-    db.query(Block).filter(or_(Block.number == block_num, Block.tag_uuid == tag_id)).first()
+    block = db.query(Block).filter(or_(Block.number == block_num, Block.tag_uuid == tag_id)).first()
     if block is None:
         block = Block(number=block_num, tag_uuid=tag_id, type='song')
         basename = os.path.basename(file_name)
@@ -125,8 +102,6 @@ def add_block(title, file_name, block_num, tag_id=None):
         else:
             if title is None:
                 title = file2title(basename)
-            # cursor.execute('INSERT INTO block_table (block_number, tag_id) VALUES (?, ?)', (block_num, tag_id))
-            # cursor.execute('INSERT INTO song_table (song_name, file_name, block_number) VALUES (?, ?, ?)', (title, song, block_num))
             try:
                 shutil.copyfile(file_name, PATH+'/Music/%s' % basename)
             except IOError as e:
@@ -141,7 +116,7 @@ def add_block(title, file_name, block_num, tag_id=None):
         print('Block Added')
         return True
     else:
-        if block.block_number == block_num:
+        if block.number == int(block_num):
             print('Block already in use')
         if block.tag_uuid == tag_id:
             print('Tag already in use')
@@ -149,13 +124,8 @@ def add_block(title, file_name, block_num, tag_id=None):
 
 
 def remove_block(block_num):
-    # query = db.execute('SELECT file_name FROM song_table WHERE block_number=?',
-    #                    block_num)
-    # song = query.fetchone()
-    block = db.query(Block).filter_by(block_number=block_num).one_or_none()
+    block = db.query(Block).filter_by(number=block_num).one_or_none()
     if block is not None:
-        # db.execute('DELETE FROM song_table WHERE block_number=?', block_num)
-        # db.execute('DELETE FROM block_table WHERE block_number=?', block_num)
         db.delete(block)
         db.commit()
         print('Block %s Deleted' % block_num)
@@ -166,29 +136,20 @@ def remove_block(block_num):
 
 
 def status():
-    # query = db.execute("""\
-    #     SELECT song_table.song_name AS song_name,
-    #     block_table.block_number AS block_number,
-    #     block_table.tag_id AS tag_id FROM song_table
-    #     INNER JOIN block_table
-    #     ON block_table.block_number=song_table.block_number
-    #     ORDER BY block_number
-    #     """)
-    blocks = db.query(Block).order_by(Block.block_number)
+    blocks = db.query(Block).order_by(Block.number)
     row = '{:^14}{:^32}{:^16}'
     print(row.format('Block Number', 'Song', 'Tag ID'))
     for block in blocks:
-        print(row.format(block.block_number, block.song.title,
+        print(row.format(block.number, block.song.title,
                          block.tag_uuid))
 
 
 def history():
-    #query = db.execute("SELECT * FROM play_history_table")
     history = db.query(PlayHistory).order_by(PlayHistory.time_played)
     row = '{:^21}{:^32}'
     print(row.format('Date/Time', 'Song'))
     for entry in history:
-        print(row.format(entry.time_played, entry.song_title))
+        print(row.format(entry.time_played.strftime('%m/%d/%y %I:%M:%S %p'), entry.song_title))
 
 
 if __name__ == '__main__':

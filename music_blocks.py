@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE
 from time import sleep
 from datetime import datetime
 from sqlalchemy import create_engine
-from sqlalchem.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from models import *
 
@@ -108,26 +108,13 @@ def main_loop():
                     history.length_played = datetime.now() - history.time_played
                     db.add(history)
                     db.commit()
-                # query = db.execute("""\
-                #     SELECT block_table.block_number AS block_number,
-                #     song_table.song_name AS song_name,
-                #     song_table.file_name AS file_name FROM block_table
-                #     INNER JOIN song_table
-                #     ON song_table.block_number = block_table.block_number
-                #     WHERE block_table.tag_id=?
-                #     """, (uid,))
-                # block = query.fetchone()
                 block = db.query(Block).filter_by(tag_uuid=uid).one_or_none()
                 if block:
                     if block.type == 'song':
                         player.play_song(PATH+'/Music/%s' % block.song.file)
-                        # db.execute("""\
-                        #     INSERT INTO play_history_table (time_played, song_name)
-                        #     VALUES (?, ?)
-                        #     """, (datetime.now(), block['song_name']))
-                            history = PlayHistory(song_title=block.song.title,
-                                                  block_number=block.number,
-                                                  time_played=datetime.now())
+                        history = PlayHistory(song_title=block.song.title,
+                                              block_number=block.number,
+                                              time_played=datetime.now())
                         playing_uid = uid
                         print('Playing %s' % block.song.title)
         except nxppy.SelectError:
